@@ -29,6 +29,16 @@ export default function App() {
   const [userRoute, setUserRoute] = useState(null); // multiRouter маршрут
   const [userPosition, setUserPosition] = useState(null); // координаты пользователя
   const userRouteRef = useRef(null);
+  const [routeHistory, setRouteHistory] = useState(() => {
+    try {
+      const stored = localStorage.getItem('routeHistory');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [routeDurations, setRouteDurations] = useState({ walk: null, car: null });
+  const [routeDurationsLoading, setRouteDurationsLoading] = useState({ walk: false, car: false });
 
   useEffect(() => {
     document.body.classList.remove('light-theme', 'dark-theme');
@@ -90,6 +100,12 @@ export default function App() {
       console.error("Failed to save routes to localStorage:", error);
     }
   }, [savedRoutes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('routeHistory', JSON.stringify(routeHistory));
+    } catch {}
+  }, [routeHistory]);
 
   const setupMapClickHandler = (mapInstance) => {
     mapInstance.events.add('click', (e) => {
@@ -211,6 +227,8 @@ export default function App() {
           map.geoObjects.add(newMarker);
           markersRef.current.push(newMarker);
         });
+        // Добавляем в историю
+        addRouteToHistory(coordinates, file.name, meta);
       }
     }
   };
@@ -235,9 +253,11 @@ export default function App() {
   const finishDrawing = () => {
     setIsDrawing(false);
     if (polylineRef.current) {
-      setRouteName("Новый маршрут"); // Устанавливаем название по умолчанию
-      setRoute(polylineRef.current); // Сохраняем завершенный маршрут в состоянии route
+      setRouteName("Новый маршрут");
+      setRoute(polylineRef.current);
       updateRouteInfo(polylineRef.current);
+      // Добавляем в историю
+      addRouteToHistory(polylineRef.current.geometry.getCoordinates(), "Новый маршрут");
     }
   };
 
@@ -437,6 +457,95 @@ export default function App() {
     );
   };
 
+  // Добавить маршрут в историю
+  const addRouteToHistory = (coords, name = '', meta = {}) => {
+    if (!coords || coords.length < 2) return;
+    const newHistoryItem = {
+      id: Date.now() + Math.random(),
+      name: name || `Маршрут #${routeHistory.length + 1}`,
+      coordinates: coords,
+      meta,
+      date: new Date().toLocaleString(),
+    };
+    setRouteHistory(prev => [newHistoryItem, ...prev]);
+  };
+
+  // Очистить всю историю
+  const clearRouteHistory = () => {
+    if (window.confirm('Удалить всю историю маршрутов?')) {
+      setRouteHistory([]);
+    }
+  };
+
+  // Загрузить маршрут из истории на карту
+  const loadHistoryRoute = (historyItem) => {
+    if (map) {
+      map.geoObjects.removeAll();
+      markersRef.current = [];
+      const polyline = new window.ymaps.Polyline(historyItem.coordinates, {}, {
+        strokeColor: "#3b82f6",
+        strokeWidth: 4,
+      });
+      map.geoObjects.add(polyline);
+      polylineRef.current = polyline;
+      setRoute(polyline);
+      setRouteName(historyItem.name);
+      setIsPublic(true);
+      map.setBounds(polyline.geometry.getBounds());
+      historyItem.coordinates.forEach(coord => {
+        const newMarker = new window.ymaps.Placemark(coord, {}, {
+          preset: 'islands#blueDotIcon',
+        });
+        map.geoObjects.add(newMarker);
+        markersRef.current.push(newMarker);
+      });
+      updateRouteInfo(polyline);
+    }
+  };
+
+  // Удалить маршрут из истории
+  const deleteHistoryRoute = (id) => {
+    setRouteHistory(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Функция для расчета времени маршрута через Яндекс.Карты
+  const calculateYandexDurations = () => {
+    if (!map || !polylineRef.current) return;
+    const coords = polylineRef.current.geometry.getCoordinates();
+    if (!coords || coords.length < 2) return;
+    // Пешком
+    setRouteDurationsLoading(prev => ({ ...prev, walk: true }));
+    window.ymaps.route(coords, { routingMode: 'pedestrian', multiRoute: true }).then((multiRoute) => {
+      const active = multiRoute.getActiveRoute();
+      const duration = active ? active.properties.get('duration').text : 'Маршрут не найден';
+      setRouteDurations(prev => ({ ...prev, walk: duration }));
+      setRouteDurationsLoading(prev => ({ ...prev, walk: false }));
+    }, () => {
+      setRouteDurations(prev => ({ ...prev, walk: 'Маршрут не найден' }));
+      setRouteDurationsLoading(prev => ({ ...prev, walk: false }));
+    });
+    // На машине
+    setRouteDurationsLoading(prev => ({ ...prev, car: true }));
+    window.ymaps.route(coords, { routingMode: 'auto', multiRoute: true }).then((multiRoute) => {
+      const active = multiRoute.getActiveRoute();
+      const duration = active ? active.properties.get('duration').text : 'Маршрут не найден';
+      setRouteDurations(prev => ({ ...prev, car: duration }));
+      setRouteDurationsLoading(prev => ({ ...prev, car: false }));
+    }, () => {
+      setRouteDurations(prev => ({ ...prev, car: 'Маршрут не найден' }));
+      setRouteDurationsLoading(prev => ({ ...prev, car: false }));
+    });
+  };
+
+  // Пересчитывать при изменении маршрута
+  useEffect(() => {
+    setRouteDurations({ walk: null, car: null });
+    setRouteDurationsLoading({ walk: false, car: false });
+    if (route) {
+      calculateYandexDurations();
+    }
+  }, [route]);
+
   return (
     <div className="container">
       <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -480,6 +589,12 @@ export default function App() {
                 <p>Конец: {routeInfo.end}</p>
                 <p>Точек: {routeInfo.length}</p>
                 <p>Длина: {routeInfo.distance} м</p>
+                <p>
+                  Время пешком: {routeDurationsLoading.walk ? 'Расчёт...' : (routeDurations.walk || '')}
+                </p>
+                <p>
+                  Время на машине: {routeDurationsLoading.car ? 'Расчёт...' : (routeDurations.car || '')}
+                </p>
               </>
             ) : (
               <p>Нарисуйте маршрут на карте, чтобы увидеть информацию.</p>
@@ -535,6 +650,30 @@ export default function App() {
             ) : (
               <p>Сохраненных маршрутов нет.</p>
             )}
+          </div>
+
+          <div className="history-routes-section">
+            <h2>История маршрутов</h2>
+            <button className="button secondary" onClick={clearRouteHistory} disabled={routeHistory.length === 0} style={{marginBottom: 8}}>
+              Очистить историю
+            </button>
+            {routeHistory.length > 0 ? (
+              <ul className="route-list">
+                {routeHistory.map((item) => (
+                  <li key={item.id} className="route-item">
+                    <span>{item.name} <span style={{color:'#888', fontSize:'0.9em'}}>({item.date})</span></span>
+                    <div className="route-actions">
+                      <button className="button small" onClick={() => loadHistoryRoute(item)}>
+                        Показать
+                      </button>
+                      <button className="button small danger" onClick={() => deleteHistoryRoute(item.id)}>
+                        Удалить
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </section>
       </main>
