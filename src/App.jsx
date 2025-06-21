@@ -581,52 +581,54 @@ export default function App() {
         </section>
 
         <section className="info-and-save-section">
-          <div className="route-info">
-            <h2>Информация о маршруте</h2>
-            {routeInfo ? (
-              <>
-                <p>Начало: {routeInfo.start}</p>
-                <p>Конец: {routeInfo.end}</p>
-                <p>Точек: {routeInfo.length}</p>
-                <p>Длина: {routeInfo.distance} м</p>
-                <p>
-                  Время пешком: {routeDurationsLoading.walk ? 'Расчёт...' : (routeDurations.walk || '')}
-                </p>
-                <p>
-                  Время на машине: {routeDurationsLoading.car ? 'Расчёт...' : (routeDurations.car || '')}
-                </p>
-              </>
-            ) : (
-              <p>Нарисуйте маршрут на карте, чтобы увидеть информацию.</p>
-            )}
-          </div>
+          <div className="route-info-and-save-row">
+            <div className="route-info">
+              <h2>Информация о маршруте</h2>
+              {routeInfo ? (
+                <>
+                  <p>Начало: {routeInfo.start}</p>
+                  <p>Конец: {routeInfo.end}</p>
+                  <p>Точек: {routeInfo.length}</p>
+                  <p>Длина: {routeInfo.distance} м</p>
+                  <p>
+                    Время пешком: {routeDurationsLoading.walk ? 'Расчёт...' : (routeDurations.walk || '')}
+                  </p>
+                  <p>
+                    Время на машине: {routeDurationsLoading.car ? 'Расчёт...' : (routeDurations.car || '')}
+                  </p>
+                </>
+              ) : (
+                <p>Нарисуйте маршрут на карте, чтобы увидеть информацию.</p>
+              )}
+            </div>
 
-          <div className="save-route-section">
-            <h2>Сохранить маршрут</h2>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Название маршрута"
-              value={routeName}
-              onChange={(e) => setRouteName(e.target.value)}
-            />
-            <label className="checkbox-label">
+            <div className="save-route-section">
+              <h2>Сохранить маршрут</h2>
               <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
+                type="text"
+                className="input-field"
+                placeholder="Название маршрута"
+                value={routeName}
+                onChange={(e) => setRouteName(e.target.value)}
               />
-              Публичный маршрут
-            </label>
-            <button className="button primary" onClick={saveRoute} disabled={!route}>
-              Сохранить маршрут
-            </button>
-            <button className="button secondary" onClick={exportRoutesToCsv} disabled={savedRoutes.length === 0}>
-              Экспортировать все в CSV
-            </button>
-            <button className="button secondary" onClick={exportRouteToGpx} disabled={!route || route.geometry.getCoordinates().length === 0}>
-              Экспортировать в GPX
-            </button>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                />
+                Публичный маршрут
+              </label>
+              <button className="button primary" onClick={saveRoute} disabled={!route}>
+                Сохранить маршрут
+              </button>
+              <button className="button secondary" onClick={exportRoutesToCsv} disabled={savedRoutes.length === 0}>
+                Экспортировать все в CSV
+              </button>
+              <button className="button secondary" onClick={exportRouteToGpx} disabled={!route || route.geometry.getCoordinates().length === 0}>
+                Экспортировать в GPX
+              </button>
+            </div>
           </div>
 
           <div className="saved-routes-section">

@@ -1,7 +1,52 @@
+/* === ТЕМЫ === */
+:root {
+  --background: #ffffff;
+  --foreground: #2c3e50;
+  --header-bg: #f8fafc;
+  --header-border: #e2e8f0;
+  --header-title: #1e40af;
+  --controls-bg: #f8fafc;
+  --controls-border: #e2e8f0;
+  --button-bg: #3b82f6;
+  --button-bg-hover: #2563eb;
+  --button-secondary-bg: #e2e8f0;
+  --button-secondary-hover: #cbd5e1;
+  --button-secondary-color: #1e40af;
+  --map-border: #e2e8f0;
+  --info-bg: #f8fafc;
+  --info-border: #e2e8f0;
+  --info-title: #1e40af;
+  --info-item-bg: #fff;
+  --info-item-border: #e2e8f0;
+  --info-item-strong: #1e40af;
+}
+
+.dark-theme {
+  --background: #181a1b;
+  --foreground: #e2e8f0;
+  --header-bg: #23272a;
+  --header-border: #23272a;
+  --header-title: #60a5fa;
+  --controls-bg: #23272a;
+  --controls-border: #23272a;
+  --button-bg: #2563eb;
+  --button-bg-hover: #1e293b;
+  --button-secondary-bg: #374151;
+  --button-secondary-hover: #1e293b;
+  --button-secondary-color: #60a5fa;
+  --map-border: #23272a;
+  --info-bg: #23272a;
+  --info-border: #23272a;
+  --info-title: #60a5fa;
+  --info-item-bg: #181a1b;
+  --info-item-border: #23272a;
+  --info-item-strong: #60a5fa;
+}
+
 body {
   font-family: 'Roboto', sans-serif;
-  background: #ffffff;
-  color: #2c3e50;
+  background: var(--background);
+  color: var(--foreground);
   margin: 0;
   padding: 0;
 }
@@ -13,49 +58,55 @@ body {
 }
 
 .header {
-  background: #f8fafc;
+  background: var(--header-bg);
   padding: 1rem 2rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--header-border);
   margin-bottom: 2rem;
 }
 
 .header h1 {
   margin: 0;
-  color: #1e40af;
+  color: var(--header-title);
   font-size: 1.8rem;
 }
 
 .controls {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 1.2rem;
   margin-bottom: 1rem;
-  background: #f8fafc;
-  padding: 1rem;
+  background: var(--controls-bg);
+  padding: 1.2rem 1rem 1.2rem 1rem;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--controls-border);
+  justify-content: flex-start;
 }
 
 .button {
-  background: #3b82f6;
+  background: var(--button-bg);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
+  font-size: 1.08rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .button:hover {
-  background: #2563eb;
+  background: var(--button-bg-hover);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 .button.secondary {
-  background: #e2e8f0;
-  color: #1e40af;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-color);
 }
 
 .button.secondary:hover {
-  background: #cbd5e1;
+  background: var(--button-secondary-hover);
 }
 
 input[type="file"] {
@@ -63,7 +114,7 @@ input[type="file"] {
 }
 
 .file-upload-label {
-  background: #3b82f6;
+  background: var(--button-bg);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -72,7 +123,7 @@ input[type="file"] {
 }
 
 .file-upload-label:hover {
-  background: #2563eb;
+  background: var(--button-bg-hover);
 }
 
 .map-container {
@@ -80,20 +131,20 @@ input[type="file"] {
   height: 600px;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--map-border);
 }
 
 .info-panel {
   margin-top: 1rem;
-  background: #f8fafc;
+  background: var(--info-bg);
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--info-border);
 }
 
 .info-panel h3 {
   margin-top: 0;
-  color: #1e40af;
+  color: var(--info-title);
 }
 
 .info-grid {
@@ -103,14 +154,49 @@ input[type="file"] {
 }
 
 .info-item {
-  background: white;
+  background: var(--info-item-bg);
   padding: 1rem;
   border-radius: 4px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--info-item-border);
 }
 
 .info-item strong {
-  color: #1e40af;
+  color: var(--info-item-strong);
   display: block;
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .controls {
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 1rem 0.5rem;
+  }
+  .button {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.7rem 0.8rem;
+  }
+}
+
+.route-info-and-save-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2.5rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+.route-info {
+  min-width: 260px;
+  flex: 1 1 260px;
+}
+.save-route-section {
+  flex: 2 1 340px;
+  min-width: 280px;
+}
+@media (max-width: 900px) {
+  .route-info-and-save-row {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
 }
