@@ -586,15 +586,15 @@ export default function App() {
               <h2>Информация о маршруте</h2>
               {routeInfo ? (
                 <>
-                  <p>Начало: {routeInfo.start}</p>
-                  <p>Конец: {routeInfo.end}</p>
-                  <p>Точек: {routeInfo.length}</p>
-                  <p>Длина: {routeInfo.distance} м</p>
-                  <p>
-                    Время пешком: {routeDurationsLoading.walk ? 'Расчёт...' : (routeDurations.walk || '')}
+                  <p><strong>Начало:</strong> {routeInfo.start}</p>
+                  <p><strong>Конец:</strong> {routeInfo.end}</p>
+                  <p><strong>Точек:</strong> {routeInfo.length}</p>
+                  <p className="route-length"><strong>Длина:</strong> {routeInfo.distance} м</p>
+                  <p className="route-time">
+                    <strong>Время пешком:</strong> {routeDurationsLoading.walk ? 'Расчёт...' : (routeDurations.walk || '')}
                   </p>
-                  <p>
-                    Время на машине: {routeDurationsLoading.car ? 'Расчёт...' : (routeDurations.car || '')}
+                  <p className="route-time">
+                    <strong>Время на машине:</strong> {routeDurationsLoading.car ? 'Расчёт...' : (routeDurations.car || '')}
                   </p>
                 </>
               ) : (
