@@ -15,6 +15,30 @@ export default function App() {
   const markersRef = useRef([]);
   const polylineRef = useRef(null);
   const [ymapsLoaded, setYmapsLoaded] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    // Проверяем localStorage или системную тему
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved;
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    }
+    return 'light';
+  });
+  const [userRoute, setUserRoute] = useState(null); // multiRouter маршрут
+  const [userPosition, setUserPosition] = useState(null); // координаты пользователя
+  const userRouteRef = useRef(null);
+
+  useEffect(() => {
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(theme === 'dark' ? 'dark-theme' : 'light-theme');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   useEffect(() => {
     window.ymaps.ready(() => {
@@ -368,10 +392,58 @@ export default function App() {
     }
   };
 
+  // Функция для построения маршрута по дорогам Яндекса от пользователя по всему маршруту
+  const buildYandexRouteFromUser = () => {
+    if (!map || !polylineRef.current) return;
+    if (!navigator.geolocation) {
+      alert('Геолокация не поддерживается вашим браузером');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const userCoords = [pos.coords.latitude, pos.coords.longitude];
+        setUserPosition(userCoords);
+        // Получаем точки пользовательского маршрута
+        const routeCoords = polylineRef.current.geometry.getCoordinates();
+        if (!routeCoords || routeCoords.length < 2) {
+          alert('Сначала нарисуйте маршрут!');
+          return;
+        }
+        // Формируем точки для multiRouter: сначала пользователь, потом все точки маршрута
+        const points = [userCoords, ...routeCoords];
+        // Удаляем предыдущий маршрут, если был
+        if (userRouteRef.current) {
+          map.geoObjects.remove(userRouteRef.current);
+          userRouteRef.current = null;
+        }
+        // Строим маршрут по дорогам
+        window.ymaps.route(points, { multiRoute: true }).then((multiRoute) => {
+          multiRoute.options.set({
+            routeActiveStrokeColor: '#10b981', // зелёный — активный маршрут
+            routeActiveStrokeWidth: 6,
+            boundsAutoApply: true,
+          });
+          map.geoObjects.add(multiRoute);
+          userRouteRef.current = multiRoute;
+          setUserRoute(multiRoute);
+        }, (err) => {
+          alert('Не удалось построить маршрут по дорогам: ' + err.message);
+        });
+      },
+      (err) => {
+        alert('Не удалось получить геопозицию: ' + err.message);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
   return (
     <div className="container">
-      <header className="header">
+      <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1>Построитель маршрутов на Яндекс Картах</h1>
+        <button className="button secondary" onClick={toggleTheme} style={{ fontSize: '1.2rem', padding: '0.5rem 1rem' }}>
+          {theme === 'dark' ? '🌙 Тёмная' : '☀️ Светлая'}
+        </button>
       </header>
       <main className="main-content">
         <section className="map-section">
@@ -393,6 +465,9 @@ export default function App() {
               Загрузить GPX
               <input type="file" accept=".gpx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
+            <button className="button primary" onClick={buildYandexRouteFromUser} disabled={!route}>
+              Вести по маршруту от моего местоположения
+            </button>
           </div>
         </section>
 
@@ -404,7 +479,7 @@ export default function App() {
                 <p>Начало: {routeInfo.start}</p>
                 <p>Конец: {routeInfo.end}</p>
                 <p>Точек: {routeInfo.length}</p>
-                <p>Длина: {routeInfo.distance} км</p>
+                <p>Длина: {routeInfo.distance} м</p>
               </>
             ) : (
               <p>Нарисуйте маршрут на карте, чтобы увидеть информацию.</p>
